@@ -1,6 +1,8 @@
 fastapi
 uvicorn
+pydantic
+python-dotenv
 youtube-transcript-api
 langchain
-python-dotenv
-groq
+langchain_groq
+google-api-python-client
