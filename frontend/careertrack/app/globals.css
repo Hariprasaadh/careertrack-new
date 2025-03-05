@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-@plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -116,14 +115,7 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
-@keyframes pulse-slow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
 
-.animate-pulse-slow {
-  animation: pulse-slow 2.5s ease-in-out infinite;
-}
 
 @layer base {
   * {
