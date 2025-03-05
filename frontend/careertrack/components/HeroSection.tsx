@@ -26,7 +26,7 @@ const AnimatedBackground = () => {
       ref={gradientRef}
       className="absolute inset-0 z-0 overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, #121212 0%, #1E1E2E 100%)',
+        background: 'linear-gradient(135deg, #F8F9FA 0%, #DEE2E6 100%)',
         backgroundSize: '400% 400%',
         animation: 'gradientAnimation 15s ease infinite'
       }}
@@ -55,36 +55,64 @@ const TechIllustration = () => {
       >
         <defs>
           <linearGradient id="techGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#00BFFF" stopOpacity="0.3"/>
-            <stop offset="100%" stopColor="#1E1E2E" stopOpacity="0.6"/>
+            <stop offset="0%" stopColor="#0A2342" stopOpacity="0.3"/>
+            <stop offset="25%" stopColor="#00528C" stopOpacity="0.5"/>
+            <stop offset="50%" stopColor="#007BFF" stopOpacity="0.6"/>
+            <stop offset="75%" stopColor="#42A5F5" stopOpacity="0.4"/>
+            <stop offset="100%" stopColor="#00C3FF" stopOpacity="0.2"/>
+          </linearGradient>
+
+          <linearGradient id="elementGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#00528C"/>
+            <stop offset="100%" stopColor="#0A2342"/>
           </linearGradient>
         </defs>
         
-        {/* Abstract tech elements */}
+        {/* Complex Abstract tech elements */}
         <path 
           d="M100 300 Q400 100 700 300" 
           fill="none" 
           stroke="url(#techGradient)" 
-          strokeWidth="4" 
-          strokeDasharray="10 10"
+          strokeWidth="6" 
+          strokeDasharray="15 15"
         />
         
         <circle 
           cx="200" 
           cy="200" 
-          r="50" 
-          fill="url(#techGradient)" 
-          opacity="0.5"
+          r="60" 
+          fill="url(#elementGradient)" 
+          opacity="0.6"
         />
         
         <rect 
           x="500" 
           y="250" 
-          width="100" 
-          height="100" 
-          fill="url(#techGradient)" 
-          opacity="0.3"
-          transform="rotate(45 550 300)"
+          width="120" 
+          height="120" 
+          fill="url(#elementGradient)" 
+          opacity="0.4"
+          transform="rotate(45 560 310)"
+        />
+
+        {/* Additional abstract elements */}
+        <path 
+          d="M300 400 Q450 250 600 400" 
+          fill="none" 
+          stroke="url(#techGradient)" 
+          strokeWidth="4" 
+          strokeDasharray="10 10"
+          opacity="0.5"
+        />
+
+        <ellipse 
+          cx="650" 
+          cy="180" 
+          rx="40" 
+          ry="25" 
+          fill="url(#elementGradient)"
+          opacity="0.4"
+          transform="rotate(-30 650 180)"
         />
       </svg>
     </div>
@@ -99,7 +127,7 @@ const HeroSection: React.FC<HeroProps> = ({
   secondaryCtaText = "Explore Services"
 }) => {
   return (
-    <div className="relative min-h-screen flex items-center justify-center text-white overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center text-[#003366] overflow-hidden bg-[#F8F9FA]">
       {/* Animated Background */}
       <AnimatedBackground />
       
@@ -119,12 +147,12 @@ const HeroSection: React.FC<HeroProps> = ({
           className="space-y-6"
         >
           {/* Main Heading */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FFD700] to-[#00BFFF] leading-tight">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#003366] leading-tight">
             {title}
           </h1>
 
           {/* Subheading */}
-          <p className="text-lg md:text-xl text-gray-300 max-w-xl">
+          <p className="text-lg md:text-xl text-[#003366] max-w-xl">
             {subtitle}
           </p>
 
@@ -133,10 +161,10 @@ const HeroSection: React.FC<HeroProps> = ({
             <motion.button
               whileHover={{ 
                 scale: 1.05,
-                boxShadow: "0 0 15px rgba(255,215,0,0.5)"
+                boxShadow: "0 0 15px rgba(0,123,255,0.5)"
               }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center space-x-2 px-8 py-4 rounded-lg bg-[#FFD700] text-[#1E1E2E] font-semibold hover:bg-opacity-90 transition-all"
+              className="flex items-center space-x-2 px-8 py-4 rounded-lg bg-[#007BFF] text-white font-semibold hover:bg-[#42A5F5] transition-all"
             >
               <PlayCircle size={24} />
               <span>{primaryCtaText}</span>
@@ -145,10 +173,10 @@ const HeroSection: React.FC<HeroProps> = ({
             <motion.button
               whileHover={{ 
                 scale: 1.05,
-                boxShadow: "0 0 15px rgba(0,191,255,0.5)"
+                boxShadow: "0 0 15px rgba(0,195,255,0.5)"
               }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center space-x-2 px-8 py-4 rounded-lg border border-[#00BFFF] text-[#00BFFF] hover:bg-[#00BFFF] hover:text-[#1E1E2E] transition-all"
+              className="flex items-center space-x-2 px-8 py-4 rounded-lg border border-[#00C3FF] text-[#00C3FF] hover:bg-[#00C3FF] hover:text-white transition-all"
             >
               <ArrowRight size={24} />
               <span>{secondaryCtaText}</span>
@@ -157,7 +185,7 @@ const HeroSection: React.FC<HeroProps> = ({
 
           {/* Feature Highlights */}
           <div className="pt-8 space-y-3">
-            <p className="text-sm text-gray-400">Trusted by professionals across industries</p>
+            <p className="text-sm text-[#003366] opacity-70">Trusted by professionals across industries</p>
             <div className="flex space-x-4">
               {[
                 { icon: BookOpen, text: "Comprehensive Courses" },
@@ -169,9 +197,9 @@ const HeroSection: React.FC<HeroProps> = ({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.2 }}
-                  className="flex items-center space-x-2 text-sm text-gray-300"
+                  className="flex items-center space-x-2 text-sm text-[#003366]"
                 >
-                  <feature.icon size={20} className="text-[#00BFFF]" />
+                  <feature.icon size={20} className="text-[#00C3FF]" />
                   <span>{feature.text}</span>
                 </motion.div>
               ))}
@@ -189,22 +217,22 @@ const HeroSection: React.FC<HeroProps> = ({
           }}
           className="hidden md:block"
         >
-          <div className="bg-gradient-to-br from-[#1E1E2E] to-[#121212] rounded-2xl shadow-2xl p-6 border border-gray-800">
-            <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
-              <div className="h-64 bg-gradient-to-r from-[#00BFFF] to-[#FFD700] opacity-20 blur-2xl absolute inset-0"></div>
+          <div className="bg-white rounded-2xl shadow-2xl p-6 border border-[#DEE2E6]">
+            <div className="bg-[#F8F9FA] rounded-lg overflow-hidden shadow-lg">
+              <div className="h-64 bg-gradient-to-r from-[#007BFF] to-[#00C3FF] opacity-20 blur-2xl absolute inset-0"></div>
               <div className="relative z-10 p-6">
                 <div className="flex justify-between mb-4">
-                  <div className="h-4 w-24 bg-gray-700 rounded"></div>
-                  <div className="h-4 w-16 bg-gray-700 rounded"></div>
+                  <div className="h-4 w-24 bg-[#DEE2E6] rounded"></div>
+                  <div className="h-4 w-16 bg-[#DEE2E6] rounded"></div>
                 </div>
                 <div className="space-y-3">
                   {[1, 2, 3].map((_, index) => (
                     <div 
                       key={index} 
-                      className="h-12 bg-gray-800 rounded-lg flex items-center px-4"
+                      className="h-12 bg-white rounded-lg flex items-center px-4 border border-[#DEE2E6]"
                     >
-                      <div className="h-4 w-4 bg-gray-700 rounded-full mr-3"></div>
-                      <div className="h-3 w-full bg-gray-700 rounded"></div>
+                      <div className="h-4 w-4 bg-[#DEE2E6] rounded-full mr-3"></div>
+                      <div className="h-3 w-full bg-[#DEE2E6] rounded"></div>
                     </div>
                   ))}
                 </div>
@@ -213,22 +241,6 @@ const HeroSection: React.FC<HeroProps> = ({
           </div>
         </motion.div>
       </div>
-
-      {/* Scroll Indicator */}
-      <motion.div
-        animate={{ 
-          y: [0, 10, 0],
-          opacity: [0.7, 1, 0.7]
-        }}
-        transition={{
-          duration: 1.5,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-[#00BFFF]"
-      >
-        <ArrowRight className="animate-bounce" size={32} />
-      </motion.div>
     </div>
   );
 };
