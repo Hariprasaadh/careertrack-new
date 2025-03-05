@@ -294,7 +294,7 @@ export default function ResumeAnalyzerPage() {
               {/* Job Link */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Description URL
+                  Job Link URL
                 </label>
                 <Input 
                   type="text" 
