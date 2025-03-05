@@ -308,7 +308,12 @@ export default function Insights() {
   // Get insights for selected domain
   const getDomainInsights = (domain: DomainType) => {
     const domainData = jobData.find(d => d.domain === domain);
-    if (!domainData) return [];
+    if (!domainData) return {
+      highestGrowthYear: '',
+      highestGrowthValue: '0',
+      totalJobs2028: 0,
+      isGrowing: false
+    };
     
     // Find year with highest growth
     let highestGrowthYear = '2025';

@@ -1,5 +1,5 @@
 "use client"
-import React, { useRef, Suspense } from 'react';
+import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   CheckCircle2, 
