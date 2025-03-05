@@ -131,7 +131,6 @@ def generate_mail(resume_content, job_content):
     return final_mail.content
 
 
-# Pydantic models for request/response validation
 class AnalysisRequest(BaseModel):
     job_link: str
 
