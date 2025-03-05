@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from youtube_transcript_api import YouTubeTranscriptApi
 from langchain_groq import ChatGroq
@@ -137,6 +138,79 @@ def get_recommended_videos(video_id: str, topic: str, keywords: list) -> list:
     except Exception as e:
         print(f"Error getting recommendations: {str(e)}")
         return [] 
+    
+
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    """Root endpoint that returns basic API information"""
+    return """
+    <html>
+    <head>
+        <title>YouTube Video Summarizer API</title>
+        <style>
+            body { 
+                font-family: Arial, sans-serif; 
+                max-width: 800px; 
+                margin: 0 auto; 
+                padding: 20px; 
+                line-height: 1.6; 
+                color: #333;
+            }
+            h1 { color: #1a73e8; }
+            .endpoint { 
+                background: #f5f5f5; 
+                padding: 15px; 
+                border-radius: 5px; 
+                margin-bottom: 20px; 
+                border-left: 4px solid #1a73e8;
+            }
+            code { 
+                background: #e0e0e0; 
+                padding: 2px 5px; 
+                border-radius: 3px; 
+            }
+            .logo {
+                font-size: 24px;
+                font-weight: bold;
+                margin-bottom: 20px;
+            }
+            .logo span {
+                color: #1a73e8;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="logo">You<span>Tube</span> Summarizer API</div>
+        <h1>Video Content Summarization API</h1>
+        <p>This API extracts, summarizes, and analyzes YouTube video content, providing concise summaries and related video recommendations.</p>
+        
+        <div class="endpoint">
+            <h2>POST /summarize</h2>
+            <p>Generate a comprehensive summary of a YouTube video along with recommendations.</p>
+            <h3>Request Parameters:</h3>
+            <ul>
+                <li><code>video_url</code>: The YouTube video URL to summarize</li>
+            </ul>
+            <h3>Response includes:</h3>
+            <ul>
+                <li>Topic identification</li>
+                <li>Key technical keywords</li>
+                <li>Detailed summary points</li>
+                <li>Key takeaways</li>
+                <li>Suggested next steps</li>
+                <li>Related video recommendations</li>
+            </ul>
+        </div>
+        
+        <div class="endpoint">
+            <h2>GET /health</h2>
+            <p>Check if the API is operational.</p>
+        </div>
+        
+        <p>Visit <code>/docs</code> for interactive API documentation and testing.</p>
+    </body>
+    </html>
+    """
 
 @app.post("/summarize")
 async def summarize_video(video_url: str):
