@@ -1,6 +1,12 @@
 // File: src/lib/platforms/leetcode.ts
 import axios from "axios";
 
+// Interface for LeetCode submission data
+interface LeetcodeSubmission {
+count: number;
+difficulty: string;
+}
+
 export async function fetchLeetCodeStats(username: string) {
   try {
     // LeetCode doesn't have a public API, so we use their GraphQL endpoint
@@ -42,7 +48,7 @@ export async function fetchLeetCodeStats(username: string) {
     
     // Calculate total problems solved (sum of all difficulties)
     const totalSolved = acSubmissionNum.reduce(
-      (sum: number, item: any) => sum + item.count,
+    (sum: number, item: LeetcodeSubmission) => sum + item.count,
       0
     );
 

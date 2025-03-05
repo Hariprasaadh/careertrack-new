@@ -19,23 +19,26 @@ export async function POST(request: NextRequest) {
     const { leetcode, hackerrank, codechef, codeforces } = body;
     
     // Fetch data from all platforms in parallel
-    const [leetcodeData, codeforcesData,] = await Promise.all([
-      fetchLeetcodeStats(leetcode),
-      fetchCodeforcesStats(codeforces),
-      
+    const [leetcodeData, codeforcesData, codechefData, hackerrankData] = await Promise.all([
+        fetchLeetcodeStats(leetcode),
+        fetchCodeforcesStats(codeforces),
+        fetchCodechefStats(codechef),
+        fetchHackerrankStats(hackerrank)
     ]);
     
     // Combine the data
     const userData: User = {
-      leetcode: leetcodeData,
-      codeforces: codeforcesData,
-
-      totalSolved: leetcodeData.totalSolved + codeforcesData.totalSolved + codechefData.totalSolved + hackerrankData.totalSolved,
-      highestRating: Math.max(
-        leetcodeData.rating || 0,
-        codeforcesData.rating || 0,
- 
-      )
+        leetcode: leetcodeData,
+        codeforces: codeforcesData,
+        codechef: codechefData,
+        hackerrank: hackerrankData,
+        totalSolved: leetcodeData.totalSolved + codeforcesData.totalSolved + codechefData.totalSolved + hackerrankData.totalSolved,
+    highestRating: Math.max(
+    leetcodeData.rating || 0,
+    codeforcesData.rating || 0,
+    codechefData.rating || 0,
+    hackerrankData.rating || 0
+    )
     };
     
     // Return the combined data
@@ -93,9 +96,16 @@ async function fetchLeetcodeStats(username: string) {
     }
     
     const submitStats = data.submitStats.acSubmissionNum;
-    const easy = submitStats.find((item: any) => item.difficulty === 'Easy')?.count || 0;
-    const medium = submitStats.find((item: any) => item.difficulty === 'Medium')?.count || 0;
-    const hard = submitStats.find((item: any) => item.difficulty === 'Hard')?.count || 0;
+    
+    interface SubmissionItem {
+        difficulty: string;
+        count: number;
+        submissions: number;
+    }
+    
+    const easy = submitStats.find((item: SubmissionItem) => item.difficulty === 'Easy')?.count || 0;
+    const medium = submitStats.find((item: SubmissionItem) => item.difficulty === 'Medium')?.count || 0;
+    const hard = submitStats.find((item: SubmissionItem) => item.difficulty === 'Hard')?.count || 0;
     
     return {
       username,
@@ -129,11 +139,19 @@ async function fetchCodeforcesStats(username: string) {
     
     // Count unique solved problems
     const solvedProblems = new Set();
-    submissions.forEach((submission: any) => {
-      if (submission.verdict === 'OK') {
+    interface CodeforcesSubmission {
+        verdict: string;
+        problem: {
+        contestId: number;
+        index: string;
+        };
+    }
+    
+    submissions.forEach((submission: CodeforcesSubmission) => {
+        if (submission.verdict === 'OK') {
         const problemKey = `${submission.problem.contestId}-${submission.problem.index}`;
         solvedProblems.add(problemKey);
-      }
+        }
     });
     
     return {
