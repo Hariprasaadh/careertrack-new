@@ -46,14 +46,12 @@ class VideoRecommendation(BaseModel):
     channel_title: str
     thumbnail_url: str
 
-class VideoSummary(BaseModel):
+class CompleteSummaryResponse(BaseModel):
     topic: str
     keywords: list[str]
     summary: list[str]
     key_takeaways: list[str]
     next_steps: list[str]
-
-class RecommendationResponse(BaseModel):
     recommendations: List[VideoRecommendation]
 
 def extract_transcript(video_url: str) -> tuple:
@@ -70,7 +68,7 @@ def generate_summary(transcript: str) -> dict:
         llm = ChatGroq(
             model_name="llama-3.3-70b-versatile",
             temperature=0.5,
-            api_key="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" #os.getenv('GROQ_API_KEY')
+            api_key=os.getenv('GROQ_API_KEY')
         )
 
         model = summary_prompt | llm
@@ -108,26 +106,25 @@ def get_recommended_videos(video_id: str, topic: str, keywords: list) -> list:
         )
         
         search_query = f"{topic} {' '.join(keywords[:3])}"
+        recommended_videos = []
         
         search_response = youtube.search().list(
             q=search_query,
             type="video",
             part="id,snippet",
-            maxResults=3,  
+            maxResults=3,
             videoDuration="medium",
-            relevanceLanguage="en",
-            relatedToVideoId=video_id
+            relevanceLanguage="en"
         ).execute()
         
-        recommended_videos = []
         for item in search_response.get("items", []):
             if item["id"]["kind"] == "youtube#video":
-                video_id = item["id"]["videoId"]
+                rec_video_id = item["id"]["videoId"]
                 snippet = item["snippet"]
                 
                 recommended_videos.append(
                     VideoRecommendation(
-                        video_id=video_id,
+                        video_id=rec_video_id,
                         title=snippet["title"],
                         channel_title=snippet["channelTitle"],
                         thumbnail_url=snippet["thumbnails"]["high"]["url"]
@@ -137,8 +134,7 @@ def get_recommended_videos(video_id: str, topic: str, keywords: list) -> list:
         return recommended_videos
     except Exception as e:
         print(f"Error getting recommendations: {str(e)}")
-        return [] 
-    
+        return []
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
@@ -185,7 +181,7 @@ async def root():
         <p>This API extracts, summarizes, and analyzes YouTube video content, providing concise summaries and related video recommendations.</p>
         
         <div class="endpoint">
-            <h2>POST /summarize</h2>
+            <h2>POST /analyze</h2>
             <p>Generate a comprehensive summary of a YouTube video along with recommendations.</p>
             <h3>Request Parameters:</h3>
             <ul>
@@ -212,30 +208,32 @@ async def root():
     </html>
     """
 
-@app.post("/summarize")
-async def summarize_video(video_url: str):
+@app.post("/analyze")
+async def analyze_video(video_url: str):
+    # Step 1: Extract the transcript
     transcript, video_id = extract_transcript(video_url)
     
+    # Step 2: Generate the summary
     summary = generate_summary(transcript)
     
- 
-    return VideoSummary(**summary)
-
-@app.post("/recommendations")
-async def get_recommendations(video_url: str):
-    transcript, video_id = extract_transcript(video_url)
-    
-    summary = generate_summary(transcript)
-    
+    # Step 3: Get video recommendations
     recommended_videos = get_recommended_videos(
         video_id=video_id,
         topic=summary["topic"],
         keywords=summary["keywords"]
     )
     
-    return RecommendationResponse(recommendations=recommended_videos)
-
-
+    # Step 4: Combine everything into one response
+    complete_response = {
+        "topic": summary["topic"],
+        "keywords": summary["keywords"],
+        "summary": summary["summary"],
+        "key_takeaways": summary["key_takeaways"],
+        "next_steps": summary["next_steps"],
+        "recommendations": recommended_videos
+    }
+    
+    return CompleteSummaryResponse(**complete_response)
 
 @app.get("/health")
 async def health_check():
