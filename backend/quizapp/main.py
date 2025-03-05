@@ -7,12 +7,10 @@ from langchain_groq import ChatGroq
 from langchain_core.output_parsers import JsonOutputParser
 import os
 
-# Load environment variables
 load_dotenv()
 
 app = FastAPI()
 
-# Initialize Groq LLM
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 llm = ChatGroq(
     model_name="llama-3.3-70b-versatile",
@@ -117,6 +115,55 @@ def fetch_questions(text_content: str, quiz_level: str, num_questions: int) -> D
     json_parser = JsonOutputParser()
     json_res = json_parser.parse(response.content)
     return json_res
+
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    """Root endpoint that returns basic API information"""
+    return """
+    <html>
+    <head>
+        <title>Quiz Generator API</title>
+        <style>
+            body { 
+                font-family: Arial, sans-serif; 
+                max-width: 800px; 
+                margin: 0 auto; 
+                padding: 20px; 
+                line-height: 1.6; 
+            }
+            h1 { color: #2a5298; }
+            .endpoint { 
+                background: #f5f5f5; 
+                padding: 15px; 
+                border-radius: 5px; 
+                margin-bottom: 20px; 
+            }
+            code { 
+                background: #e0e0e0; 
+                padding: 2px 5px; 
+                border-radius: 3px; 
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Quiz Generator API</h1>
+        <p>This API generates multiple-choice quizzes from provided text content or GATE PYQs.</p>
+        
+        <div class="endpoint">
+            <h2>POST /generate-quiz</h2>
+            <p>Generate a quiz with multiple-choice questions based on input text or GATE Subjects.</p>
+            <h3>Request Parameters:</h3>
+            <ul>
+                <li><code>text_content</code>: Input text to generate questions from</li>
+                <li><code>num_questions</code>: Number of questions (default: 5)</li>
+                <li><code>quiz_level</code>: Difficulty level (default: "Medium")</li>
+            </ul>
+        </div>
+        
+        <p>Check <code>/docs</code> for detailed API documentation.</p>
+    </body>
+    </html>
+    """
 
 @app.post("/generate-quiz", response_model=QuizResponse)
 async def generate_quiz(request: QuizRequest):
