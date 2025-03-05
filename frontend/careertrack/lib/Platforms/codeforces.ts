@@ -1,6 +1,13 @@
 // File: src/lib/platforms/codeforces.ts
 import axios from "axios";
 
+interface CodeforcesSubmission {
+verdict: string;
+problem: {
+    contestId: number;
+    index: string;
+};
+}
 export async function fetchCodeforcesStats(username: string) {
   try {
     // Codeforces has an official API
@@ -16,7 +23,7 @@ export async function fetchCodeforcesStats(username: string) {
     const submissions = response.data.result;
     const solvedProblems = new Set();
     
-    submissions.forEach((submission: any) => {
+    submissions.forEach((submission: CodeforcesSubmission) => {
       if (submission.verdict === "OK") {
         // Create a unique identifier for each problem
         const problemId = `${submission.problem.contestId}-${submission.problem.index}`;
