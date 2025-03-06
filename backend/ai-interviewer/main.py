@@ -52,7 +52,7 @@ def extract_text(uploaded_file):
         return f"Error extracting text: {str(e)}"
 
 class HireBot:
-    def _init_(self):
+    def __init__(self):
         self.memory = ConversationBufferMemory(
             memory_key="chat_history",
             return_messages=True
