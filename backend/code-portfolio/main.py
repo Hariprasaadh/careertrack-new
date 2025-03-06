@@ -82,7 +82,7 @@ async def root():
                 <p>Get the number of questions solved from a fixed Coding Ninjas profile (UI accepts username).</p>
                 <p><strong>Request Body:</strong> <code>{"username": "any_username"}</code></p>
             </div>
-            
+
             <div class="endpoint">
                 <h2>POST /geeksforgeeks</h2>
                 <p>Get the number of problems solved from a GeeksforGeeks user profile.</p>
@@ -226,7 +226,7 @@ async def get_geeksforgeeks_stats(request: UsernameRequest):
         raise HTTPException(status_code=404, detail=f"Failed to fetch GeeksforGeeks data. Status code: {response.status_code}")
 
     soup = BeautifulSoup(response.text, "html.parser")
-    score_element = soup.find("div", class_="scoreCard_head_left--score__oS")
+    score_element = soup.find("div", class_="scoreCard_head_left--score__oSi_x")
 
     if score_element:
         problems_solved = score_element.text.strip()
