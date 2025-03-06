@@ -219,20 +219,16 @@ async def root():
 
 @app.post("/analyze")
 async def analyze_video(video_url: str):
-    # Step 1: Extract the transcript
     transcript, video_id = extract_transcript(video_url)
     
-    # Step 2: Generate the summary
     summary = generate_summary(transcript)
     
-    # Step 3: Get video recommendations
     recommended_videos = get_recommended_videos(
         video_id=video_id,
         topic=summary["topic"],
         keywords=summary["keywords"]
     )
     
-    # Step 4: Combine everything into one response
     complete_response = {
         "topic": summary["topic"],
         "keywords": summary["keywords"],
