@@ -1,11 +1,10 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from langchain_groq import ChatGroq
 from fastapi.middleware.cors import CORSMiddleware
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import LLMChain
-from langchain_core.prompts import PromptTemplate
 import os
 from dotenv import load_dotenv
 import PyPDF2 as pdf
@@ -13,6 +12,7 @@ from typing import Dict
 from pydantic import BaseModel
 import json
 import traceback
+import re
 
 load_dotenv()
 
@@ -20,10 +20,10 @@ app = FastAPI(title="HireBot API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  
-    allow_headers=["*"],  
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 chat_llm = ChatGroq(
@@ -68,7 +68,7 @@ class HireBot:
         )
         
         self.system_prompt_template = """
-            You are AI Recruiter -> HireBot, designed to create a perfect mock interview for candidates prepare for  real-world job interviews.
+            You are AI Recruiter -> HireBot, designed to create a perfect mock interview for candidates prepare for real-world job interviews.
             Based on the resume content, ask relevant questions about their introduction, experience, skills, and projects.
             Start with a welcoming message and an initial question when initialized.
             The question should be short and crisp.
@@ -98,7 +98,7 @@ class HireBot:
         ])
         self.conversation.prompt = self.prompt
         
-        initial_input = "Say Good Day!. Start the interview with a welcome message and an initial question based on the resume. Be very formal and professional/  The question should be short and crisp"
+        initial_input = "Say Good Day!. Start the interview with a welcome message and an initial question based on the resume. Be very formal and professional. The question should be short and crisp"
         response = self.conversation({"input": initial_input})
         return response['text']
 
@@ -109,80 +109,80 @@ class HireBot:
     def generate_feedback(self) -> FeedbackResponse:
         chat_history = self.memory.chat_memory.messages
         
-        # Use a simpler prompt approach to get valid JSON
-        feedback_prompt = """
-You are a professional interview coach. You need to evaluate a job interview based on the resume and conversation history provided below.Give the scores properly. Dont randomly assign.
+        # Use f-string approach with double curly braces for JSON template
+        feedback_prompt = f"""
+You are a professional interview coach. Evaluate the job interview based on the resume and conversation history provided below. Provide accurate scores based on the content.
 
-Return ONLY a JSON object with the following format:
-{
+Return ONLY a JSON object in this exact format:
+{{
   "communication_skills": 7,
   "technical_knowledge": 8,
   "confidence_level": 6,
-  "detailed_feedback": "Short and concise evaluation of the candidate's performance in the interview discussion as well as resume relevance. The feedback should be professional".
-}
+  "overall_score": 7.0,
+  "detailed_feedback": "Candidate demonstrated clear communication skills when discussing their experience at XYZ Corp. Their technical knowledge of Python and React was evident from project descriptions. Confidence was moderate but could be improved when explaining complex concepts. Based on the resume, they have strong relevant experience as a Senior Developer."
+}}
 
-Use integers between 0-10 for all scores. Keep the detailed_feedback concise.
+- Use integers 0-10 for communication_skills, technical_knowledge, and confidence_level
+- Calculate overall_score as the average of the three scores (float)
+- Keep detailed_feedback concise (1-2 paragraphs) and professional
+- Base evaluation on actual content, not random scores
 
 Resume:
-{resume_content}
+{self.resume_content}
 
 Conversation:
-{chat_history}
-
-Your JSON response (nothing else):
+{str(chat_history)}
 """
         
         try:
-            # Create a direct prompt for the LLM
-            formatted_prompt = feedback_prompt.format(
-                resume_content=self.resume_content,
-                chat_history=str(chat_history)
-            )
+            feedback_raw = feedback_llm.invoke(feedback_prompt).content
             
-            # Get raw response from LLM
-            feedback_raw = feedback_llm.invoke(formatted_prompt)
-            print(f"LLM response: {feedback_raw}")
+            # Extract JSON from response
+            json_match = re.search(r'\{[\s\S]*\}', feedback_raw)
+            if not json_match:
+                raise ValueError("No valid JSON found in LLM response")
+                
+            json_str = json_match.group(0)
+            feedback_dict = json.loads(json_str)
             
-            # Extract JSON from the response (in case the LLM adds extra text)
-            import re
-            json_match = re.search(r'(\{.*\})', feedback_raw, re.DOTALL)
+            # Validate required fields
+            required_fields = ["communication_skills", "technical_knowledge", 
+                            "confidence_level", "detailed_feedback"]
+            for field in required_fields:
+                if field not in feedback_dict:
+                    raise ValueError(f"Missing required field: {field}")
             
-            if json_match:
-                json_str = json_match.group(1)
-                feedback_dict = json.loads(json_str)
-            else:
-                # Try with the full response if no JSON pattern found
-                feedback_dict = json.loads(feedback_raw)
-            
-            # Calculate overall score
+            # Calculate and validate scores
             scores = [
                 feedback_dict["communication_skills"],
                 feedback_dict["technical_knowledge"],
                 feedback_dict["confidence_level"]
             ]
-            overall_score = sum(scores) / len(scores)
+            for score in scores:
+                if not isinstance(score, int) or score < 0 or score > 10:
+                    raise ValueError("Scores must be integers between 0-10")
+                    
+            overall_score = float(sum(scores)) / len(scores)
+            feedback_dict["overall_score"] = overall_score
             
             return FeedbackResponse(
                 communication_skills=feedback_dict["communication_skills"],
                 technical_knowledge=feedback_dict["technical_knowledge"],
                 confidence_level=feedback_dict["confidence_level"],
-                overall_score=overall_score,
+                overall_score=feedback_dict["overall_score"],
                 detailed_feedback=feedback_dict["detailed_feedback"]
             )
         except Exception as e:
             error_details = traceback.format_exc()
             print(f"Error in feedback generation: {error_details}")
-            
-            # Create a sample feedback for error cases
             return FeedbackResponse(
-                communication_skills=7,
-                technical_knowledge=7,
-                confidence_level=7,
-                overall_score=7.0,
-                detailed_feedback=f"Based on the limited interaction, the candidate appears to have adequate communication skills and technical knowledge. Additional conversation would provide a more comprehensive assessment."
+                communication_skills=0,
+                technical_knowledge=0,
+                confidence_level=0,
+                overall_score=0.0,
+                detailed_feedback=f"Unable to generate feedback due to error: {str(e)}"
             )
 
-# Initialize with a sample resume for s1 session
 hirebot_instances: Dict[str, HireBot] = {}
 sample_bot = HireBot()
 sample_resume = """
@@ -298,8 +298,15 @@ async def get_feedback(session_id: str):
     
     hirebot = hirebot_instances[session_id]
     feedback = hirebot.generate_feedback()
-    return feedback
+    
+    return JSONResponse(content={
+        "communication_skills": feedback.communication_skills,
+        "technical_knowledge": feedback.technical_knowledge,
+        "confidence_level": feedback.confidence_level,
+        "overall_score": float(feedback.overall_score),
+        "detailed_feedback": feedback.detailed_feedback
+    })
 
-if __name__ == "_main_":
+if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="localhost", port=8001)
