@@ -8,10 +8,12 @@ import {
   Image, 
   TextInput,
   Dimensions,
-  Animated
+  Animated,
+  Alert
 } from 'react-native';
-import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons';
+import { AntDesign, Feather, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useUser, useAuth } from '@clerk/clerk-expo';
 
 const { width } = Dimensions.get('window');
 
@@ -70,6 +72,10 @@ const TodoItem = ({ item, onToggleComplete, onDelete }) => {
 };
 
 const Dashboard = ({ navigation }) => {
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const { signOut, isLoaded: isAuthLoaded } = useAuth();
+  
+  // State for todos and UI
   const [scrollX] = useState(new Animated.Value(0));
   const [todoText, setTodoText] = useState('');
   const [todos, setTodos] = useState([
@@ -77,6 +83,14 @@ const Dashboard = ({ navigation }) => {
     { id: '2', text: 'Read chapter 5', completed: true },
     { id: '3', text: 'Prepare for presentation', completed: false },
   ]);
+  
+  // Get user data from Clerk
+  const profileImageUrl = isUserLoaded ? (user?.imageUrl || user?.profileImageUrl) : 'https://via.placeholder.com/60';
+  const username = isUserLoaded ? (user?.fullName || user?.username || 'Student') : 'Loading...';
+  
+  // Track user's todo completion stats
+  const completedTasks = todos.filter(todo => todo.completed).length;
+  const totalTasks = todos.length;
 
   const educationalQuotes = [
     { id: 1, quote: "Education is the most powerful weapon which you can use to change the world.", author: "Nelson Mandela" },
@@ -108,6 +122,34 @@ const Dashboard = ({ navigation }) => {
   const deleteTodo = (id) => {
     setTodos(todos.filter(todo => todo.id !== id));
   };
+  
+  const handleSignOut = async () => {
+    try {
+      if (!isAuthLoaded) return;
+      
+      Alert.alert(
+        "Sign Out",
+        "Are you sure you want to sign out?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          { 
+            text: "Sign Out", 
+            onPress: async () => {
+              await signOut();
+              // The navigation will be handled by the auth state change in App.js
+            },
+            style: "destructive"
+          }
+        ]
+      );
+    } catch (err) {
+      console.error("Sign out error:", err);
+      Alert.alert("Error", "Failed to sign out. Please try again.");
+    }
+  };
 
   return (
     <LinearGradient
@@ -123,11 +165,21 @@ const Dashboard = ({ navigation }) => {
           style={styles.profileSection}
         >
           <Image 
-            source={{ uri: 'https://upload.wikimedia.org/wikipedia/en/b/b7/Billy_Butcher.jpg' }} 
+            source={{ uri: profileImageUrl }} 
             style={styles.profileImage} 
+            defaultSource={require('../assets/icon.png')}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>Billy Butcher</Text>
+            <View style={styles.usernameRow}>
+              <Text style={styles.userName}>{username}</Text>
+              <TouchableOpacity 
+                style={styles.signOutButton}
+                onPress={handleSignOut}
+              >
+                <Ionicons name="log-out-outline" size={20} color="#FF5252" />
+                <Text style={styles.signOutText}>Sign Out</Text>
+              </TouchableOpacity>
+            </View>
             <Text style={styles.userDetails}>Student • Focus Level: Pro</Text>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
@@ -141,8 +193,8 @@ const Dashboard = ({ navigation }) => {
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>8</Text>
-                <Text style={styles.statLabel}>Tasks</Text>
+                <Text style={styles.statNumber}>{completedTasks}</Text>
+                <Text style={styles.statLabel}>Completed</Text>
               </View>
             </View>
           </View>
@@ -279,10 +331,30 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     flex: 1,
   },
+  usernameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   userName: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#2D3748',
+    flex: 1,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 82, 82, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  signOutText: {
+    fontSize: 12,
+    color: '#FF5252',
+    marginLeft: 4,
+    fontWeight: '500',
   },
   userDetails: {
     fontSize: 13,
