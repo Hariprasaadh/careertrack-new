@@ -1,28 +1,29 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
-from gitingest import ingest_async
+from fastapi.middleware.cors import CORSMiddleware
 from langchain_groq import ChatGroq
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.memory import ConversationBufferMemory
-from fastapi.middleware.cors import CORSMiddleware
 from langchain.chains import LLMChain
 from langchain.schema import SystemMessage
 import asyncio
-import os 
+import os
 from dotenv import load_dotenv
+
+from gitingest import ingest_async
 
 load_dotenv()
 
 app = FastAPI(title="GitHub Repository Chat API")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  
-    allow_headers=["*"],  
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-
 
 chatbot_instances = {}
 
@@ -39,16 +40,18 @@ class GitRepoChat:
         )
         self.repo_data = None
         self.chain = None
-        
+
     async def ingest_repository(self, repo_url):
+        """Ingest a GitHub repository asynchronously"""
         self.repo_data = await ingest_async(repo_url)
         self.chain = self.create_chain()
         return {"status": "success", "repo_url": repo_url}
-    
+
     def create_chain(self):
+        """Create the LLM chain with repository data"""
         if not self.repo_data:
             raise ValueError("No repository data available. Please ingest a repository first.")
-        
+
         prompt = ChatPromptTemplate.from_messages([
             SystemMessage(content=f"""You are GitHubAssistant, a helpful AI that helps users understand GitHub repositories.
 You have access to the following repository data:
@@ -60,12 +63,11 @@ Be concise and short but informative. If you don't know something, say so.
             MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{question}")
         ])
-        
+
         return LLMChain(
             llm=self.llm,
             prompt=prompt,
             memory=self.memory,
-            verbose=True
         )
 
 class IngestRequest(BaseModel):
@@ -138,6 +140,9 @@ async def ingest_endpoint(request: IngestRequest):
     """Endpoint to ingest a GitHub repository"""
     try:
         groq_api_key = os.getenv("GROQ_API_KEY")
+        if not groq_api_key:
+            raise HTTPException(status_code=500, detail="GROQ_API_KEY not configured in environment")
+
         chatbot = GitRepoChat(groq_api_key)
         result = await chatbot.ingest_repository(request.repo_url)
         chatbot_instances[request.session_id] = chatbot
@@ -152,17 +157,18 @@ async def chat_endpoint(request: ChatRequest):
         chatbot = chatbot_instances.get(request.session_id)
         if not chatbot:
             raise HTTPException(status_code=404, detail="Session not found. Please ingest a repository first.")
-        
+
         if not chatbot.chain:
             raise HTTPException(status_code=400, detail="Repository not ingested yet.")
-        
-        response = chatbot.chain.run(question=request.question)
+
+        response = await chatbot.chain.arun(question=request.question)  # Use arun for async compatibility
         return {"response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
 
 @app.get("/health")
 async def health_check():
+    """Check the health status of the API"""
     return {"status": "healthy"}
 
 if __name__ == "__main__":
