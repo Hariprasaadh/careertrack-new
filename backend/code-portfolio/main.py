@@ -82,6 +82,12 @@ async def root():
                 <p>Get the number of questions solved from a fixed Coding Ninjas profile (UI accepts username).</p>
                 <p><strong>Request Body:</strong> <code>{"username": "any_username"}</code></p>
             </div>
+            
+            <div class="endpoint">
+                <h2>POST /geeksforgeeks</h2>
+                <p>Get the number of problems solved from a GeeksforGeeks user profile.</p>
+                <p><strong>Request Body:</strong> <code>{"username": "your_geeksforgeeks_username"}</code></p>
+            </div>
 
             <p>Check <code>/docs</code> for detailed API documentation and interactive testing.</p>
         </body>
@@ -205,6 +211,32 @@ async def get_codingninjas_stats(request: UsernameRequest):
         raise HTTPException(status_code=500, detail=f"Could not fetch Coding Ninjas data. Error: {str(e)}")
     
     driver.quit()
+    return result
+
+@app.post("/geeksforgeeks")
+async def get_geeksforgeeks_stats(request: UsernameRequest):
+    username = request.username
+    url = f"https://www.geeksforgeeks.org/user/{username}/"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        raise HTTPException(status_code=404, detail=f"Failed to fetch GeeksforGeeks data. Status code: {response.status_code}")
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    score_element = soup.find("div", class_="scoreCard_head_left--score__oS")
+
+    if score_element:
+        problems_solved = score_element.text.strip()
+    else:
+        raise HTTPException(status_code=404, detail="Could not find problems solved data on GeeksforGeeks profile")
+
+    result = {
+        "username": username,
+        "problems_solved": problems_solved
+    }
     return result
 
 if __name__ == "__main__":
