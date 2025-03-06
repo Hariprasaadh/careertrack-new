@@ -5,6 +5,7 @@ from gitingest import ingest_async
 from langchain_groq import ChatGroq
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.memory import ConversationBufferMemory
+from fastapi.middleware.cors import CORSMiddleware
 from langchain.chains import LLMChain
 from langchain.schema import SystemMessage
 import asyncio
@@ -14,6 +15,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI(title="GitHub Repository Chat API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],  
+)
+
 
 chatbot_instances = {}
 
