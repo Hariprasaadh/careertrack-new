@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 from youtube_transcript_api import YouTubeTranscriptApi
 from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
@@ -14,6 +15,14 @@ from typing import List
 load_dotenv()
 
 app = FastAPI(title="YouTube Video Summary API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"],  
+)
 
 summary_prompt = PromptTemplate.from_template(
     """
