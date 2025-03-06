@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse
 from langchain_groq import ChatGroq
+from fastapi.middleware.cors import CORSMiddleware
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import LLMChain
@@ -16,6 +17,14 @@ import traceback
 load_dotenv()
 
 app = FastAPI(title="HireBot API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],  
+)
 
 chat_llm = ChatGroq(
     model_name="llama-3.3-70b-versatile",
