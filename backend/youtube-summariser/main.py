@@ -66,7 +66,7 @@ class CompleteSummaryResponse(BaseModel):
 def extract_transcript(video_url: str) -> tuple:
     try:
         video_id = video_url.split("v=")[1].split("&")[0]
-        transcript_text = YouTubeTranscriptApi.get_transcript(video_id)
+        transcript_text = YouTubeTranscriptApi.get_transcript(video_id,languages=['en'])
         transcript = " ".join(item["text"] for item in transcript_text)
         return transcript, video_id
     except Exception as e:
