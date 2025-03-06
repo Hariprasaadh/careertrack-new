@@ -360,7 +360,7 @@ export default function Home() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2 pl-1">
-                    Example: "What methodology did the researchers use?"
+                    Example: &quot;What methodology did the researchers use?&quot;
                   </p>
                 </div>
               </CardContent>
