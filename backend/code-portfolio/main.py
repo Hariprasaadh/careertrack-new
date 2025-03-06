@@ -204,7 +204,7 @@ async def get_codingninjas_stats(request: UsernameRequest):
         solved_element = driver.find_element(By.CLASS_NAME, "left.zen-typo-heading-5")
         solved_count = solved_element.text
         result = {
-            "username": request.username,  # Return the input username for UI consistency
+            "username": request.username,  
             "questions_solved": solved_count
         }
     except Exception as e:
@@ -227,16 +227,17 @@ async def get_geeksforgeeks_stats(request: UsernameRequest):
         raise HTTPException(status_code=404, detail=f"Failed to fetch GeeksforGeeks data. Status code: {response.status_code}")
 
     soup = BeautifulSoup(response.text, "html.parser")
-    score_element = soup.find("div", class_="scoreCard_head_left--score__oSi_x")
 
-    if score_element:
-        problems_solved = score_element.text.strip()
-    else:
-        raise HTTPException(status_code=404, detail="Could not find problems solved data on GeeksforGeeks profile")
+    score_element = soup.find("div", class_="scoreCard_head_left--score__oSi_x")
+    problems_solved = score_element.text.strip() if score_element else "N/A"
+
+    college_element = soup.find("div", class_="educationDetails_head_left--text__tgi9I")
+    college_name = college_element.text.strip() if college_element else "N/A"
 
     result = {
         "username": username,
-        "problems_solved": problems_solved
+        "problems_solved": problems_solved,
+        "college_name": college_name
     }
     return result
 
