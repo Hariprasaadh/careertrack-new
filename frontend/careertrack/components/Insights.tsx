@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { 
   LineChart, 
   Line, 
@@ -81,16 +81,54 @@ type YearType = typeof YEARS[number];
 
 export default function Insights() {
   // Typed state management
-  const [jobData, setJobData] = useState<JobOpportunityData[]>([]);
-  const [growthData, setGrowthData] = useState<GrowthData[]>([]);
-  const [activeDomain, setActiveDomain] = useState<DomainType>('AIML');
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<'growth' | 'opportunities'>('growth');
+const [jobData, setJobData] = useState<JobOpportunityData[]>([]);
+const [growthData, setGrowthData] = useState<GrowthData[]>([]);
+const [activeDomain, setActiveDomain] = useState<DomainType>('AIML');
+const [loading, setLoading] = useState<boolean>(true);
+const [error, setError] = useState<string | null>(null);
+const [view, setView] = useState<'growth' | 'opportunities'>('growth');
+const [selectedDomains, setSelectedDomains] = useState<DomainType[]>([...DOMAINS]);
+const [showAllDomains, setShowAllDomains] = useState<boolean>(true);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+const fetchData = useCallback(async () => {
+try {
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+    throw new Error('Gemini API key is not defined');
+    }
+
+    // Generate more realistic data with proper typing
+    const mockData: JobOpportunityData[] = DOMAINS.map(domain => {
+    // Starting value between 100-400
+    const baseValue = Math.floor(Math.random() * 300) + 100;
+    
+    // Generate values with a trend (increasing or decreasing)
+    const trend = Math.random() > 0.3 ? 1 : -0.2; // Most domains have positive growth
+    const volatility = Math.random() * 0.2 + 0.05; // 5-25% variation
+    
+    return {
+        domain,
+        "2024": baseValue,
+        "2025": Math.max(50, Math.floor(baseValue * (1 + trend * 0.1 + (Math.random() * volatility - volatility/2)))),
+        "2026": Math.max(50, Math.floor(baseValue * (1 + trend * 0.2 + (Math.random() * volatility - volatility/2)))),
+        "2027": Math.max(50, Math.floor(baseValue * (1 + trend * 0.3 + (Math.random() * volatility - volatility/2)))),
+        "2028": Math.max(50, Math.floor(baseValue * (1 + trend * 0.4 + (Math.random() * volatility - volatility/2))))
+    };
+    });
+
+    setJobData(mockData);
+    setGrowthData(calculateGrowthData(mockData));
+    setLoading(false);
+} catch (error) {
+    console.error('Error fetching data:', error);
+    setError(error instanceof Error ? error.message : 'An unknown error occurred');
+    setLoading(false);
+}
+}, []);
+
+useEffect(() => {
+fetchData();
+}, [fetchData]);
 
   // Calculate growth percentages from raw job data
   const calculateGrowthData = (jobData: JobOpportunityData[]): GrowthData[] => {
@@ -140,40 +178,69 @@ export default function Insights() {
     return growthData;
   };
 
-  const fetchData = async () => {
-    try {
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error('Gemini API key is not defined');
-      }
 
-      // Generate more realistic data with proper typing
-      const mockData: JobOpportunityData[] = DOMAINS.map(domain => {
-        // Starting value between 100-400
-        const baseValue = Math.floor(Math.random() * 300) + 100;
-        
-        // Generate values with a trend (increasing or decreasing)
-        const trend = Math.random() > 0.3 ? 1 : -0.2; // Most domains have positive growth
-        const volatility = Math.random() * 0.2 + 0.05; // 5-25% variation
-        
-        return {
-          domain,
-          "2024": baseValue,
-          "2025": Math.max(50, Math.floor(baseValue * (1 + trend * 0.1 + (Math.random() * volatility - volatility/2)))),
-          "2026": Math.max(50, Math.floor(baseValue * (1 + trend * 0.2 + (Math.random() * volatility - volatility/2)))),
-          "2027": Math.max(50, Math.floor(baseValue * (1 + trend * 0.3 + (Math.random() * volatility - volatility/2)))),
-          "2028": Math.max(50, Math.floor(baseValue * (1 + trend * 0.4 + (Math.random() * volatility - volatility/2))))
-        };
-      });
-
-      setJobData(mockData);
-      setGrowthData(calculateGrowthData(mockData));
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setError(error instanceof Error ? error.message : 'An unknown error occurred');
-      setLoading(false);
+  // Handle legend click to show/hide individual domains
+  const handleLegendClick = (dataKey: string) => {
+    const domain = dataKey as DomainType;
+    
+    if (showAllDomains) {
+      // If showing all domains, switch to showing only the clicked domain
+      setSelectedDomains([domain]);
+      setShowAllDomains(false);
+    } else if (selectedDomains.length === 1 && selectedDomains[0] === domain) {
+      // If the clicked domain is the only one displayed, show all domains
+      setSelectedDomains([...DOMAINS]);
+      setShowAllDomains(true);
+    } else {
+      // Otherwise, just show the clicked domain
+      setSelectedDomains([domain]);
     }
+    
+    // Also set this domain as active for the detail view
+    setActiveDomain(domain);
+  };
+
+// Custom legend component that makes items clickable
+const CustomizedLegend = (props: { payload?: Array<{dataKey: string; value: string; color: string}> }) => {
+const { payload = [] } = props;
+    
+    return (
+    <div className="flex flex-wrap justify-center gap-3 py-2 px-4">
+    {payload.map((entry: {dataKey: string; value: string; color: string}, index: number) => {
+        const domain = entry.dataKey as DomainType;
+          const isActive = selectedDomains.includes(domain);
+          
+          return (
+            <div 
+              key={`item-${index}`}
+              className={`flex items-center cursor-pointer px-3 py-1 rounded-full text-sm transition-all
+                         ${isActive 
+                            ? 'bg-gray-100 shadow-sm font-medium' 
+                            : 'opacity-50 hover:opacity-75'}`}
+              onClick={() => handleLegendClick(entry.dataKey)}
+            >
+              <div 
+                style={{ backgroundColor: entry.color }}
+                className="w-3 h-3 rounded-full mr-2"
+              />
+              <span>{entry.value}</span>
+            </div>
+          );
+        })}
+        <div 
+          className={`flex items-center cursor-pointer px-3 py-1 rounded-full text-sm transition-all
+                     ${showAllDomains 
+                        ? 'bg-blue-100 shadow-sm font-medium text-blue-700' 
+                        : 'bg-gray-50 hover:bg-gray-100'}`}
+          onClick={() => {
+            setSelectedDomains([...DOMAINS]);
+            setShowAllDomains(true);
+          }}
+        >
+          <span>Show All</span>
+        </div>
+      </div>
+    );
   };
 
   const renderDomainDetailCard = (domain: DomainType) => {
@@ -374,7 +441,11 @@ export default function Insights() {
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
             <div className="p-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                {view === 'growth' ? 'Year-over-Year Percentage Growth' : 'Job Opportunities by Domain'}
+                {view === 'growth' ? (
+                  showAllDomains 
+                    ? 'Year-over-Year Percentage Growth' 
+                    : `${DOMAIN_FULL_NAMES[selectedDomains[0]]} Percentage Growth`
+                ) : 'Job Opportunities by Domain'}
               </h2>
               <div className="h-[500px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -408,9 +479,13 @@ export default function Insights() {
                         }}
                         formatter={(value: number) => [`${value}%`, 'Growth']}
                       />
-                      <Legend verticalAlign="top" height={36} />
+                      <Legend 
+                        content={<CustomizedLegend />}
+                        verticalAlign="top" 
+                        height={60}
+                      />
                       
-                      {DOMAINS.map((domain) => (
+                      {DOMAINS.filter(domain => selectedDomains.includes(domain)).map((domain) => (
                         <Line 
                           key={domain}
                           type="monotone" 
@@ -418,8 +493,8 @@ export default function Insights() {
                           name={DOMAIN_FULL_NAMES[domain]}
                           stroke={DOMAIN_COLORS[domain]}
                           activeDot={{ r: 8 }}
-                          strokeWidth={2}
-                          dot={{ r: 4 }}
+                          strokeWidth={selectedDomains.length === 1 ? 3 : 2}
+                          dot={{ r: selectedDomains.length === 1 ? 5 : 4 }}
                         />
                       ))}
                     </LineChart>
@@ -485,7 +560,14 @@ export default function Insights() {
               return (
                 <div 
                   key={domain} 
-                  onClick={() => setActiveDomain(domain)}
+                  onClick={() => {
+                    setActiveDomain(domain);
+                    // Also show this domain in the chart if in growth view
+                    if (view === 'growth') {
+                      setSelectedDomains([domain]);
+                      setShowAllDomains(false);
+                    }
+                  }}
                   className={`bg-white rounded-xl p-4 cursor-pointer transition-all transform hover:-translate-y-1 border-l-4 ${activeDomain === domain ? 'shadow-lg' : 'shadow'}`}
                   style={{ borderLeftColor: DOMAIN_COLORS[domain] }}
                 >
@@ -586,6 +668,7 @@ export default function Insights() {
               </div>
             </div>
           </div>
+          
           
           {/* Summary Section */}
           <div className="mt-12 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 shadow-inner">
