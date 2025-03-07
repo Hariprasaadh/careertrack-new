@@ -1,6 +1,8 @@
 "use client"
 import React from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { FileText, MessageSquare, Youtube, ClipboardCheck, Mic2, Code2, Github, Phone} from 'lucide-react';
 
 // Feature Card Component
 const FeatureCard: React.FC<{
@@ -10,34 +12,41 @@ const FeatureCard: React.FC<{
   bgColor: string;
   textColor: string;
   iconColor: string;
-}> = ({ title, description, icon, bgColor, textColor, iconColor }) => {
+  href: string;
+}> = ({ title, description, icon, bgColor, textColor, iconColor, href }) => {
   return (
-    <motion.div
-      whileHover={{ 
-        scale: 1.05,
-        boxShadow: "0 15px 25px rgba(0,0,0,0.1)"
-      }}
-      className={`
-        relative 
-        overflow-hidden 
-        ${bgColor} 
-        border 
-        border-gray-200 
-        rounded-2xl 
-        p-6 
-        space-y-4 
-        transition-all 
-        duration-300 
-        hover:border-blue-500
-        group
-      `}
-    >
-      <div className={`${iconColor} mb-4 group-hover:scale-110 transition-transform`}>
-        {icon}
-      </div>
-      <h3 className={`text-xl font-semibold ${textColor} mb-2`}>{title}</h3>
-      <p className={`${textColor} opacity-70`}>{description}</p>
-    </motion.div>
+    <Link href={href}>
+      <motion.div
+        whileHover={{ 
+          scale: 1.05,
+          boxShadow: "0 15px 25px rgba(0,0,0,0.1)"
+        }}
+        className={`
+          relative 
+          overflow-hidden 
+          ${bgColor} 
+          border 
+          border-gray-200 
+          rounded-2xl 
+          p-6 
+          h-full
+          flex
+          flex-col
+          space-y-4 
+          transition-all 
+          duration-300 
+          hover:border-blue-500
+          group
+          cursor-pointer
+        `}
+      >
+        <div className={`${iconColor} mb-4 group-hover:scale-110 transition-transform`}>
+          {icon}
+        </div>
+        <h3 className={`text-xl font-semibold ${textColor} mb-2`}>{title}</h3>
+        <p className={`${textColor} opacity-70 mt-auto`}>{description}</p>
+      </motion.div>
+    </Link>
   );
 };
 
@@ -45,102 +54,95 @@ const FeatureCard: React.FC<{
 const FeaturesSection: React.FC = () => {
   const educationalServices = [
     {
-      title: "Chat with PDF",
-      description: "Interact with your PDF documents using AI-powered conversation",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="10" y1="13" x2="14" y2="13"/>
-          <line x1="10" y1="17" x2="14" y2="17"/>
-          <line x1="6" y1="13" x2="8" y2="13"/>
-          <line x1="6" y1="17" x2="8" y2="17"/>
-        </svg>
-      ),
-      bgColor: "bg-green-50",
-      textColor: "text-green-900",
-      iconColor: "text-green-600"
-    },
-    {
-      title: "YouTube Video Summarizer",
-      description: "Get concise summaries of YouTube videos with AI",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.34z"/>
-          <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>
-        </svg>
-      ),
-      bgColor: "bg-blue-50",
-      textColor: "text-blue-900",
-      iconColor: "text-blue-600"
-    },
-    {
       title: "Quiz Generator",
       description: "Create custom quizzes on any topic instantly",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="7" y1="8" x2="17" y2="8"/>
-          <line x1="7" y1="12" x2="17" y2="12"/>
-          <line x1="7" y1="16" x2="13" y2="16"/>
-          <path d="M15 16l2 2 4-4"/>
-        </svg>
-      ),
+      icon: <FileText width={48} height={48} />,
       bgColor: "bg-purple-50",
       textColor: "text-purple-900",
-      iconColor: "text-purple-600"
+      iconColor: "text-purple-600",
+      href: "/quiz-generator"
+    },
+    {
+      title: "Chat with PDF",
+      description: "Interact with your PDF documents using AI-powered conversation",
+      icon: <MessageSquare width={48} height={48} />,
+      bgColor: "bg-green-50",
+      textColor: "text-green-900",
+      iconColor: "text-green-600",
+      href: "/chat-pdf"
+    },
+    {
+      title: "YT Summarizer",
+      description: "Get concise summaries of YouTube videos with AI",
+      icon: <Youtube width={48} height={48} />,
+      bgColor: "bg-blue-50",
+      textColor: "text-blue-900",
+      iconColor: "text-blue-600",
+      href: "/yt-summarizer"
     }
   ];
 
   const interviewServices = [
     {
-      title: "ATS Resume Generator",
+      title: "ATS Analyzer",
       description: "Create ATS-optimized resumes that pass screening algorithms",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="7" y1="8" x2="17" y2="8"/>
-          <line x1="7" y1="12" x2="17" y2="12"/>
-          <line x1="7" y1="16" x2="17" y2="16"/>
-          <path d="M3 10h18"/>
-          <path d="M10 14h4"/>
-        </svg>
-      ),
+      icon: <ClipboardCheck width={48} height={48} />,
       bgColor: "bg-teal-50",
       textColor: "text-teal-900",
-      iconColor: "text-teal-600"
+      iconColor: "text-teal-600",
+      href: "/ats-analyzer"
     },
     {
-      title: "Code Portfolio",
-      description: "Showcase your coding skills with an AI-curated portfolio",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-        </svg>
-      ),
-      bgColor: "bg-indigo-50",
-      textColor: "text-indigo-900",
-      iconColor: "text-indigo-600"
-    },
-    {
-      title: "Mock Interview Prep",
+      title: "AI Interview",
       description: "AI-powered interview simulation and feedback",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-          <polyline points="16 17 21 12 16 7"/>
-          <line x1="21" y1="12" x2="9" y2="12"/>
-        </svg>
-      ),
+      icon: <Mic2 width={48} height={48} />,
       bgColor: "bg-orange-50",
       textColor: "text-orange-900",
-      iconColor: "text-orange-600"
+      iconColor: "text-orange-600",
+      href: "/ai-interview"
+    },
+    {
+      title: "Coding Portfolio",
+      description: "Showcase your coding skills with an AI-curated portfolio",
+      icon: <Code2 width={48} height={48} />,
+      bgColor: "bg-indigo-50",
+      textColor: "text-indigo-900",
+      iconColor: "text-indigo-600",
+      href: "/coding-portfolio"
+    }
+  ];
+
+  // Additional card for "Chat with GitHub"
+  const additionalCard = [
+    {title: "Chat with GitHub",
+    description: "Interact with your GitHub repositories using AI-powered conversation",
+    icon: <Github width={48} height={48} />,
+    bgColor: "bg-gray-50",
+    textColor: "text-gray-900",
+    iconColor: "text-gray-600",
+    href: "/chat-github"},
+    {
+      title: "AI Resume Builder",
+      description: "Create professional resumes with AI-driven content suggestions",
+      icon: <ClipboardCheck width={48} height={48} />,
+      bgColor: "bg-blue-50",
+      textColor: "text-blue-900",
+      iconColor: "text-blue-600",
+      href: "/resumebuilder",
+    },
+    {
+      title: "Mobile intergration",
+      description: "Integrate AI-powered features into your mobile app",
+      icon: <Phone width={48} height={48} />,
+      bgColor: "bg-red-50",
+      textColor: "text-red-900",
+      iconColor: "text-red-600",
+      href: "/mobile-integration",
     }
   ];
 
   return (
-    <div className="relative min-h-screen bg-white text-gray-900 py-16 px-4 md:px-8 lg:px-16">
+    <div className="relative min-h-screen bg-white text-gray-900 py-16 px-4 md:px-8 lg:px-16" id='Features'>
       {/* Subtle Background Pattern */}
       <div className="absolute inset-0 bg-pattern opacity-5 pointer-events-none"></div>
       
@@ -153,7 +155,7 @@ const FeaturesSection: React.FC = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-fill-transparent">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">
             Powerful AI-Driven Learning & Interview Tools
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -163,65 +165,13 @@ const FeaturesSection: React.FC = () => {
 
         {/* Services Container */}
         <div className="space-y-12">
-          {/* Educational Services */}
+          {/* Interview Services FIRST */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h3 className="text-3xl font-semibold mb-8 text-center text-gray-900 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-fill-transparent">
-              Educational Services
-            </h3>
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: {
-                  opacity: 1,
-                  transition: {
-                    delayChildren: 0.2,
-                    staggerChildren: 0.1
-                  }
-                }
-              }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-6"
-            >
-              {educationalServices.map((service, index) => (
-                <motion.div
-                  key={index}
-                  variants={{
-                    hidden: { opacity: 0, y: 50 },
-                    visible: { 
-                      opacity: 1, 
-                      y: 0,
-                      transition: { 
-                        duration: 0.6,
-                        ease: "easeOut" 
-                      }
-                    }
-                  }}
-                >
-                  <FeatureCard 
-                    title={service.title}
-                    description={service.description}
-                    icon={service.icon}
-                    bgColor={service.bgColor}
-                    textColor={service.textColor}
-                    iconColor={service.iconColor}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
-          </motion.div>
-
-          {/* Interview Services */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h3 className="text-3xl font-semibold mb-8 text-center text-gray-900 bg-gradient-to-r from-teal-600 to-indigo-600 bg-clip-text text-fill-transparent">
+            <h3 className="text-3xl font-semibold mb-8 text-center text-gray-900 bg-gradient-to-r from-teal-600 to-indigo-600 bg-clip-text">
               Interview Services
             </h3>
             <motion.div
@@ -253,6 +203,7 @@ const FeaturesSection: React.FC = () => {
                       }
                     }
                   }}
+                  className="h-full"
                 >
                   <FeatureCard 
                     title={service.title}
@@ -261,9 +212,118 @@ const FeaturesSection: React.FC = () => {
                     bgColor={service.bgColor}
                     textColor={service.textColor}
                     iconColor={service.iconColor}
+                    href={service.href}
                   />
                 </motion.div>
               ))}
+            </motion.div>
+          </motion.div>
+
+          {/* Educational Services SECOND */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h3 className="text-3xl font-semibold mb-8 text-center text-gray-900 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text">
+              Educational Services
+            </h3>
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    delayChildren: 0.2,
+                    staggerChildren: 0.1
+                  }
+                }
+              }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            >
+              {educationalServices.map((service, index) => (
+                <motion.div
+                  key={index}
+                  variants={{
+                    hidden: { opacity: 0, y: 50 },
+                    visible: { 
+                      opacity: 1, 
+                      y: 0,
+                      transition: { 
+                        duration: 0.6,
+                        ease: "easeOut" 
+                      }
+                    }
+                  }}
+                  className="h-full"
+                >
+                  <FeatureCard 
+                    title={service.title}
+                    description={service.description}
+                    icon={service.icon}
+                    bgColor={service.bgColor}
+                    textColor={service.textColor}
+                    iconColor={service.iconColor}
+                    href={service.href}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+
+          {/* Additional Card - Chat with GitHub */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h3 className="text-3xl font-semibold mb-8 text-center text-gray-900 bg-gradient-to-r from-gray-600 to-gray-800 bg-clip-text">
+              Additional Tools
+            </h3>
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    delayChildren: 0.2,
+                    staggerChildren: 0.1
+                  }
+                }
+              }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            >
+                {additionalCard.map((card, index) => (
+                <motion.div
+                  key={index}
+                  variants={{
+                  hidden: { opacity: 0, y: 50 },
+                  visible: { 
+                    opacity: 1, 
+                    y: 0,
+                    transition: {   
+                    duration: 0.6,
+                    ease: "easeOut" 
+                    }
+                  }
+                  }}
+                  className="h-full"
+                >
+                  <FeatureCard 
+                  title={card.title}
+                  description={card.description}
+                  icon={card.icon}
+                  bgColor={card.bgColor}
+                  textColor={card.textColor}
+                  iconColor={card.iconColor}
+                  href={card.href}
+                  />
+                </motion.div>
+                ))}
             </motion.div>
           </motion.div>
         </div>

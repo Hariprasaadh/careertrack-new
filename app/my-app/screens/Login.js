@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -12,12 +12,32 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSignIn, useSignUp, useOAuth } from '@clerk/clerk-expo';
+import { useSignIn, useSignUp, useOAuth, useAuth } from '@clerk/clerk-expo';
+import * as SecureStore from 'expo-secure-store';
 
-export default function Login() {
+// Token cache for Clerk session persistence
+const tokenCache = {
+  async getToken(key) {
+    try {
+      return SecureStore.getItemAsync(key);
+    } catch (err) {
+      return null;
+    }
+  },
+  async saveToken(key, value) {
+    try {
+      return SecureStore.setItemAsync(key, value);
+    } catch (err) {
+      return;
+    }
+  },
+};
+
+export default function Login({ navigation }) {
   const { signIn, setActive: setSignInActive, isLoaded: isSignInLoaded } = useSignIn();
   const { signUp, setActive: setSignUpActive, isLoaded: isSignUpLoaded } = useSignUp();
   const { startOAuthFlow: startGoogleOAuth } = useOAuth({ strategy: 'oauth_google' });
+  const { isLoaded, isSignedIn, sessionId } = useAuth();
 
   // State management
   const [email, setEmail] = useState('');
@@ -27,6 +47,21 @@ export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  // Check for existing session on component mount
+  useEffect(() => {
+    if (isLoaded) {
+      setInitialLoading(false);
+      
+      // If user is already signed in, navigate to the main app
+      if (isSignedIn) {
+        // Navigate to main app
+        // navigation.replace('MainApp');
+        console.log('User is already signed in with session ID:', sessionId);
+      }
+    }
+  }, [isLoaded, isSignedIn]);
 
   // Handle email/password sign in
   const handleSignIn = async () => {
@@ -42,7 +77,15 @@ export default function Login() {
       });
 
       if (result.status === 'complete') {
+        // Store session
         await setSignInActive({ session: result.createdSessionId });
+        
+        // Save the session token
+        await tokenCache.saveToken('clerk-session-token', result.createdSessionId);
+        
+        // Navigate to main app
+        // navigation.replace('MainApp');
+        console.log('Sign in complete, navigating to main app');
       } else {
         setError('Additional verification steps required.');
       }
@@ -72,7 +115,15 @@ export default function Login() {
         await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
         setError('Please verify your email to continue.');
       } else if (result.status === 'complete') {
+        // Store session
         await setSignUpActive({ session: result.createdSessionId });
+        
+        // Save the session token
+        await tokenCache.saveToken('clerk-session-token', result.createdSessionId);
+        
+        // Navigate to main app
+        // navigation.replace('MainApp');
+        console.log('Sign up complete, navigating to main app');
       }
     } catch (err) {
       setError(err.message || 'Sign up failed. Please try again.');
@@ -92,7 +143,15 @@ export default function Login() {
       const { createdSessionId, setActive } = await startGoogleOAuth();
       
       if (createdSessionId) {
+        // Store session
         await setActive({ session: createdSessionId });
+        
+        // Save the session token
+        await tokenCache.saveToken('clerk-session-token', createdSessionId);
+        
+        // Navigate to main app
+        // navigation.replace('MainApp');
+        console.log('Google sign-in complete, navigating to main app');
       }
     } catch (err) {
       setError(err.message || 'Google sign-in failed. Please try again.');
@@ -110,6 +169,16 @@ export default function Login() {
     setLastName('');
   };
 
+  // Show loading indicator while checking for existing session
+  if (initialLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4A6FFF" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -119,7 +188,7 @@ export default function Login() {
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.headerContainer}>
             <Image
-            source={require('../assets/icon.png')}
+              source={require('../assets/icon.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -360,5 +429,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
     fontSize: 14,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
   },
 });

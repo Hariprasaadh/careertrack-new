@@ -1,191 +1,231 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useUser } from "@clerk/clerk-expo";
+import { supabase } from '../supabase/config';
+import { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, Easing } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
 const Pomodoro = ({ navigation }) => {
+  const { user } = useUser();
+  
   // Timer state
   const [isRunning, setIsRunning] = useState(false);
   const [isWorkSession, setIsWorkSession] = useState(true);
   const [minutes, setMinutes] = useState(25);
   const [seconds, setSeconds] = useState(0);
   const [completedCycles, setCompletedCycles] = useState(0);
-  const timerIntervalRef = useRef(null);
-  const animatedValue = useRef(new Animated.Value(0)).current;
+  const [userSessions, setUserSessions] = useState([]);
+  const [sessionStartTime, setSessionStartTime] = useState(null);
+  const [activeDuration, setActiveDuration] = useState(0);
   
-  // Settings with customizable options
-  const [workDuration, setWorkDuration] = useState(25);
-  const [breakDuration, setBreakDuration] = useState(5);
-  const [longBreakDuration, setLongBreakDuration] = useState(15);
-  const [cyclesBeforeLongBreak, setCyclesBeforeLongBreak] = useState(4);
-  
-  // Pomodoro benefits information
-  const benefitCards = [
-    {
-      title: "Enhanced Focus",
-      description: "The 25-minute focused sessions help improve concentration while minimizing distractions. Studies show that time-boxing your work increases productive output.",
-      color: "#FF6B6B"
-    },
-    {
-      title: "Reduced Mental Fatigue",
-      description: "Regular breaks prevent burnout and mental exhaustion, helping maintain high cognitive performance throughout the day.",
-      color: "#4ECDC4"
-    },
-    {
-      title: "Better Time Management",
-      description: "Breaking work into manageable chunks helps you understand how long tasks really take and improves your ability to estimate time.",
-      color: "#FFD166"
-    },
-    {
-      title: "Increased Accountability",
-      description: "Each Pomodoro session creates a sense of urgency and commitment to complete specific tasks within the allocated time.",
-      color: "#6D78AD"
-    }
-  ];
+  // Settings
+  const workDuration = 25;
+  const breakDuration = 5;
+  const longBreakDuration = 15;
+  const cyclesBeforeLongBreak = 4;
 
-  // Start timer
+  // Refs
+  const timerIntervalRef = useRef(null);
+  const durationIntervalRef = useRef(null);
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  // Session tracking with improved error handling
+  const logSession = async (sessionType, duration) => {
+    try {
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
+      
+      if (!sessionStartTime) {
+        throw new Error("Invalid session timing");
+      }
+
+      const { data, error } = await supabase
+        .from('sessions')
+        .insert([{
+          user_id: user.id,  // Stored as text
+          session_type: sessionType,
+          start_time: sessionStartTime.toISOString(),
+          end_time: new Date().toISOString(),
+          duration
+        }])
+        .select('*');
+
+      if (error) {
+        throw new Error(`Supabase error: ${error.message}`);
+      }
+
+      if (data) {
+        setUserSessions(prev => [...data, ...prev]);
+        console.log("Session saved successfully:", data);
+      }
+    } catch (error) {
+      console.error("Session logging failed:", error.message);
+      // Add user-facing error message here
+    }
+  };
+
+  // Auto-save functionality
+  const checkAutoSave = () => {
+    if (activeDuration >= 120) {
+      logSession(isWorkSession ? 'work' : 'break', activeDuration);
+    }
+  };
+
+  // Fetch sessions with error handling
+  const loadSessions = async () => {
+    try {
+      if (!user?.id) return;
+
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setUserSessions(data || []);
+    } catch (error) {
+      console.error("Failed to load sessions:", error.message);
+    }
+  };
+
+  useEffect(() => {
+    loadSessions();
+  }, [user?.id]);
+
+  // Timer controls
   const startTimer = () => {
     setIsRunning(true);
-    
-    // Start animation
+    setSessionStartTime(new Date());
+    setActiveDuration(0);
     animateProgress();
-    
+
+    durationIntervalRef.current = setInterval(() => {
+      setActiveDuration(prev => prev + 1);
+    }, 1000);
+
     timerIntervalRef.current = setInterval(() => {
-      setSeconds(prevSeconds => {
-        if (prevSeconds === 0) {
+      setSeconds(prev => {
+        if (prev === 0) {
           if (minutes === 0) {
-            // Timer completed
             handleSessionComplete();
             return 0;
           }
-          setMinutes(prevMinutes => prevMinutes - 1);
+          setMinutes(m => m - 1);
           return 59;
         }
-        return prevSeconds - 1;
+        return prev - 1;
       });
     }, 1000);
   };
-  
-  // Handle session completion
-  const handleSessionComplete = () => {
-    clearInterval(timerIntervalRef.current);
-    timerIntervalRef.current = null;
-    
-    // If it was a work session, increment the completed cycles
-    if (isWorkSession) {
-      setCompletedCycles(prev => prev + 1);
+
+  const handleSessionComplete = async () => {
+    try {
+      await logSession(isWorkSession ? 'work' : 'break', activeDuration);
+      
+      if (isWorkSession) {
+        setCompletedCycles(prev => prev + 1);
+      }
+
+      const nextIsWork = !isWorkSession;
+      const nextDuration = nextIsWork 
+        ? workDuration 
+        : (completedCycles + 1) % cyclesBeforeLongBreak === 0 
+          ? longBreakDuration 
+          : breakDuration;
+
+      setIsWorkSession(nextIsWork);
+      setMinutes(nextDuration);
+      setSeconds(0);
+    } catch (error) {
+      console.error("Session completion error:", error);
+    } finally {
+      setIsRunning(false);
+      animatedValue.setValue(0);
+      setSessionStartTime(null);
+      setActiveDuration(0);
+      clearIntervals();
     }
-    
-    // Determine next session type
-    setIsWorkSession(prev => !prev);
-    
-    // Determine duration of next session
-    if (isWorkSession) {
-      // Finished work session, starting break
-      // Check if it's time for a long break
-      const isLongBreak = (completedCycles + 1) % cyclesBeforeLongBreak === 0 && completedCycles > 0;
-      setMinutes(isLongBreak ? longBreakDuration : breakDuration);
-    } else {
-      // Finished break, starting work
-      setMinutes(workDuration);
-    }
-    
-    setSeconds(0);
-    setIsRunning(false);
-    animatedValue.setValue(0); // Reset progress animation
   };
-  
-  // Animate the progress circle
-  const animateProgress = () => {
-    const totalDuration = (minutes * 60 + seconds) * 1000;
-    Animated.timing(animatedValue, {
-      toValue: 1,
-      duration: totalDuration,
-      easing: Easing.linear,
-      useNativeDriver: false
-    }).start();
-  };
-  
-  // Pause timer
+
   const pauseTimer = () => {
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
-    
-    // Pause animation
+    clearIntervals();
     animatedValue.stopAnimation();
-    
     setIsRunning(false);
+    checkAutoSave();
   };
-  
-  // Reset timer
+
   const resetTimer = () => {
     pauseTimer();
     setIsWorkSession(true);
     setMinutes(workDuration);
     setSeconds(0);
     animatedValue.setValue(0);
+    setSessionStartTime(null);
+    setActiveDuration(0);
   };
-  
-  // Clean up on unmount
+
+  const clearIntervals = () => {
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    if (durationIntervalRef.current) clearInterval(durationIntervalRef.current);
+    timerIntervalRef.current = null;
+    durationIntervalRef.current = null;
+  };
+
+  // Cleanup
   useEffect(() => {
     return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
+      clearIntervals();
+      if (isRunning) checkAutoSave();
     };
   }, []);
-  
-  // Calculate circular progress
-  const circleColor = isWorkSession ? '#FF6B6B' : '#4ECDC4';
-  const finalCircleColor = isWorkSession ? '#8B0000' : '#006400';
-  
-  const circleColorValue = animatedValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [circleColor, finalCircleColor]
-  });
-  
+
+  // Animation config
   const radius = 110;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = animatedValue.interpolate({
     inputRange: [0, 1],
     outputRange: [circumference, 0]
   });
-  
+
+  const animateProgress = () => {
+    Animated.timing(animatedValue, {
+      toValue: 1,
+      duration: (minutes * 60 + seconds) * 1000,
+      easing: Easing.linear,
+      useNativeDriver: false
+    }).start();
+  };
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <Text style={styles.title}>Pomodoro Timer</Text>
-      
+
+      {/* Session Status */}
       <View style={styles.sessionStatusContainer}>
-        <Text style={[
-          styles.sessionText,
-          {color: isWorkSession ? '#FF6B6B' : '#4ECDC4'}
-        ]}>
+        <Text style={[styles.sessionText, { color: isWorkSession ? '#FF6B6B' : '#4ECDC4' }]}>
           {isWorkSession ? 'FOCUS SESSION' : 'BREAK TIME'}
         </Text>
-        <Text style={styles.cycleText}>
-          Cycles completed: {completedCycles}
-        </Text>
+        <Text style={styles.cycleText}>Completed cycles: {completedCycles}</Text>
       </View>
-      
-      {/* Timer Circle */}
+
+      {/* Timer Display */}
       <View style={styles.timerContainer}>
         <View style={styles.timerCircleBackground}>
-          <View style={styles.progressBackground}>
-            <Svg width={240} height={240}>
-              <AnimatedCircle
-                cx={120}
-                cy={120}
-                r={radius}
-                stroke={circleColorValue}
-                strokeWidth={15}
-                fill="transparent"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-              />
-            </Svg>
-          </View>
+          <Svg width={240} height={240}>
+            <AnimatedCircle
+              cx={120}
+              cy={120}
+              r={radius}
+              stroke={isWorkSession ? '#FF6B6B' : '#4ECDC4'}
+              strokeWidth={15}
+              fill="transparent"
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
+            />
+          </Svg>
           <View style={styles.timerDisplay}>
             <Text style={styles.timerText}>
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
@@ -196,61 +236,62 @@ const Pomodoro = ({ navigation }) => {
           </View>
         </View>
       </View>
-      
-      {/* Control Buttons */}
+
+      {/* Controls */}
       <View style={styles.buttonRow}>
         {!isRunning ? (
-          <TouchableOpacity 
-            style={[styles.button, {backgroundColor: isWorkSession ? '#FF6B6B' : '#4ECDC4'}]} 
-            onPress={startTimer}
-          >
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: isWorkSession ? '#FF6B6B' : '#4ECDC4' }]}
+            onPress={startTimer}>
             <Text style={styles.buttonText}>Start</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity 
-            style={[styles.button, {backgroundColor: '#FFD166'}]} 
-            onPress={pauseTimer}
-          >
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: '#FFD166' }]}
+            onPress={pauseTimer}>
             <Text style={styles.buttonText}>Pause</Text>
           </TouchableOpacity>
         )}
-        
-        <TouchableOpacity 
-          style={[styles.button, styles.resetButton]} 
-          onPress={resetTimer}
-        >
+        <TouchableOpacity
+          style={[styles.button, styles.resetButton]}
+          onPress={resetTimer}>
           <Text style={styles.buttonText}>Reset</Text>
         </TouchableOpacity>
       </View>
-      
-      {/* Benefits Section */}
-      <Text style={styles.benefitsTitle}>Benefits of Pomodoro Technique</Text>
-      
-      <View style={styles.benefitsContainer}>
-        {benefitCards.map((benefit, index) => (
-          <View 
-            key={index} 
-            style={[styles.benefitCard, {backgroundColor: benefit.color}]}
-          >
-            <Text style={styles.benefitTitle}>{benefit.title}</Text>
-            <Text style={styles.benefitDescription}>{benefit.description}</Text>
+
+      {/* Session History */}
+      <Text style={styles.sectionTitle}>Session History</Text>
+      <View style={styles.historyContainer}>
+        {userSessions.map((session) => (
+          <View key={session.id} style={styles.sessionCard}>
+            <View style={styles.sessionHeader}>
+              <Text style={[
+                styles.sessionType,
+                { color: session.session_type === 'work' ? '#FF6B6B' : '#4ECDC4' }
+              ]}>
+                {session.session_type.toUpperCase()}
+              </Text>
+              <Text style={styles.sessionDuration}>
+                {Math.floor(session.duration / 60)}m {session.duration % 60}s
+              </Text>
+            </View>
+            <Text style={styles.sessionTime}>
+              {new Date(session.start_time).toLocaleDateString()}{' '}
+              {new Date(session.start_time).toLocaleTimeString()}
+            </Text>
           </View>
         ))}
       </View>
-      
-      {/* Back Button */}
-      <TouchableOpacity 
-        style={[styles.button, styles.backButton]} 
-        onPress={() => navigation.navigate('Dashboard')}
-      >
+
+      {/* Navigation */}
+      <TouchableOpacity
+        style={[styles.button, styles.backButton]}
+        onPress={() => navigation.goBack()}>
         <Text style={styles.buttonText}>Back to Dashboard</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 };
-
-// Create the animated Circle component
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const styles = StyleSheet.create({
   container: {
@@ -266,7 +307,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     color: '#333',
-    marginTop: 10,
   },
   sessionStatusContainer: {
     alignItems: 'center',
@@ -275,7 +315,6 @@ const styles = StyleSheet.create({
   sessionText: {
     fontSize: 20,
     fontWeight: 'bold',
-    letterSpacing: 1,
     marginBottom: 5,
   },
   cycleText: {
@@ -283,8 +322,6 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   timerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 30,
   },
   timerCircleBackground: {
@@ -292,20 +329,12 @@ const styles = StyleSheet.create({
     height: 240,
     borderRadius: 120,
     backgroundColor: '#fff',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-  },
-  progressBackground: {
-    position: 'absolute',
-    width: 240,
-    height: 240,
   },
   timerDisplay: {
+    position: 'absolute',
     alignItems: 'center',
   },
   timerText: {
@@ -316,71 +345,62 @@ const styles = StyleSheet.create({
   timerLabel: {
     fontSize: 18,
     color: '#666',
-    marginTop: 5,
   },
   buttonRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    gap: 10,
     marginBottom: 30,
   },
   button: {
     padding: 15,
     borderRadius: 10,
-    flex: 1,
-    marginHorizontal: 5,
+    minWidth: 100,
     alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
   resetButton: {
     backgroundColor: '#E74C3C',
   },
   backButton: {
-    backgroundColor: '#757575',
+    backgroundColor: '#6c757d',
     width: '100%',
-    marginTop: 10, 
   },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-  },
-  benefitsTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    marginTop: 10,
-    color: '#333',
     alignSelf: 'flex-start',
+    marginBottom: 15,
+    color: '#333',
   },
-  benefitsContainer: {
+  historyContainer: {
     width: '100%',
     marginBottom: 20,
   },
-  benefitCard: {
-    borderRadius: 10,
-    padding: 16,
+  sessionCard: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 15,
     marginBottom: 10,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
   },
-  benefitTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
+  sessionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 5,
   },
-  benefitDescription: {
-    fontSize: 14,
-    color: 'white',
-    lineHeight: 20,
+  sessionType: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  sessionDuration: {
+    color: '#666',
+  },
+  sessionTime: {
+    color: '#999',
+    fontSize: 12,
   },
 });
 

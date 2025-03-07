@@ -578,7 +578,7 @@ const { payload = [] } = props;
                     <div className="flex justify-between">
                       <span>2028 Projection:</span>
                       <span className="font-medium">
-                        {domainData["2028"]}
+                        {domainData["2028"]}00
                       </span>
                     </div>
                     <div className="flex justify-between mt-1">
@@ -720,7 +720,7 @@ const { payload = [] } = props;
                     <li key={index} className="mb-1">
                       <span className="font-medium">{DOMAIN_FULL_NAMES[domain.domain]}</span>
                       <span className="text-gray-600 ml-2">
-                        ({domain["2028"]} positions)
+                        ({domain["2028"]}100  positions)
                       </span>
                     </li>
                   ))}
