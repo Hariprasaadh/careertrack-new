@@ -134,22 +134,7 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Newsletter */}
-        <div className="mt-12 pt-8 border-t border-blue-800/50">
-          <div className="max-w-md mx-auto">
-            <h5 className="text-lg font-medium text-white text-center mb-4">Stay updated with our latest features</h5>
-            <div className="flex">
-              <input 
-                type="email" 
-                placeholder="Enter your email" 
-                className="flex-grow px-4 py-2 bg-blue-800/50 text-blue-100 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              />
-              <button className="bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-white px-4 py-2 rounded-r-lg transition-colors">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </div>
+       
 
         {/* Copyright */}
         <div className="mt-12 pt-8 border-t border-blue-800/50 text-center text-sm text-blue-300">
