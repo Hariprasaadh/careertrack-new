@@ -193,10 +193,13 @@ const HireBot = () => {
         const transcript = currentResult[0].transcript;
         
         if (currentResult.isFinal) {
-          setInputMessage(prev => prev + transcript + ' ');
+          // Replace instead of append to avoid duplication
+          setInputMessage(transcript + ' ');
           recognition.stop();
           setIsListening(false);
+          
         } else {
+          // Only update with interim results if we're not already showing final results
           setInputMessage(transcript);
         }
       };
@@ -765,7 +768,7 @@ const HireBot = () => {
                   onClick={toggleCamera}
                   disabled={!cameraSupported || isLoading}
                 >
-                  {cameraActive ? <VideoOff className="h-4 w-4" /> : <Video className="h-4 w-4" />}
+                  {cameraActive ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -773,7 +776,7 @@ const HireBot = () => {
                   onClick={toggleListening}
                   disabled={!voiceSupported || isLoading}
                 >
-                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  {isListening ? < Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
                 </Button>
               </div>
             </CardHeader>
