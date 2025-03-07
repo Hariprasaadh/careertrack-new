@@ -1,8 +1,10 @@
 # CareerTrack - The Smartest Way to Learn, Prepare & Succeed! 🎓
 
 🔗 **Live Website:** [CareerTrack](https://careertrack-one.vercel.app/)  
-📱 **App:** Available for Android & iOS <br>
-![CareerTrack Banner](https://yourimageurl.com/banner.png)  
+📱 **App:** Available for Android & iOS 
+<br>
+<br>
+![CareerTrack Banner](banner.jpg)  
 
 
 ## 🎯 Problem Statement
