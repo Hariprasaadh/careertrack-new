@@ -102,10 +102,10 @@ CareerTrack is an **AI-powered career companion** that integrates **learning, jo
    - AI-assisted **study tracking, sleep monitoring, and stress management**.
 
 ## 🤝 Contributors
-👤 **[K.Hariprasaadh]** - [GitHub](https://github.com/Hariprasaadh) | [LinkedIn](https://www.linkedin.com/in/hariprasaadh-k-a5430a287/)  
-👤 **[Mithil Girish]** - [GitHub](https://github.com/mithilgirish) | [LinkedIn](https://www.linkedin.com/in/mithilgirish/)  
-👤 **[V.Prasanth]** - [GitHub](https://github.com/prashhviji) | [LinkedIn](https://www.linkedin.com/in/prasanth-v7115/)  
-👤 **[Venkatakrishnan]** - [GitHub](https://github.com/venkat24k) | [LinkedIn](https://www.linkedin.com/in/venkata-krishnan-4618b9292/)  
+👤 **K.Hariprasaadh** - [GitHub](https://github.com/Hariprasaadh) | [LinkedIn](https://www.linkedin.com/in/hariprasaadh-k-a5430a287/)  
+👤 **Mithil Girish** - [GitHub](https://github.com/mithilgirish) | [LinkedIn](https://www.linkedin.com/in/mithilgirish/)  
+👤 **V.Prasanth** - [GitHub](https://github.com/prashhviji) | [LinkedIn](https://www.linkedin.com/in/prasanth-v7115/)  
+👤 **Venkatakrishnan** - [GitHub](https://github.com/venkat24k) | [LinkedIn](https://www.linkedin.com/in/venkata-krishnan-4618b9292/)  
 
 ## 🌟 Support & Feedback
 If you like this project, ⭐ **star this repo** and share your feedback! 📝
