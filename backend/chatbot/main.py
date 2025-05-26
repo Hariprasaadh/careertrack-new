@@ -55,7 +55,7 @@ The goal is to be their ultimate career mentor and motivational guide.
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", system_prompt),
-    MessagesPlaceholder(variable_name="chat_history"),
+    MessagesPlaceholder(variable_name="chat_history"), #This is a placeholder that allows dynamic insertion of prior conversation history.
     ("human", "{input}")
 ])
 
