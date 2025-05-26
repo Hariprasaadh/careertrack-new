@@ -59,6 +59,11 @@ prompt = ChatPromptTemplate.from_messages([
     ("human", "{input}")
 ])
 
+#system: for setting the behavior or context of the assistant
+#human: the user message
+#ai or assistant: the model's previous responses
+
+
 conversation = LLMChain(
     llm=llm,
     prompt=prompt,
